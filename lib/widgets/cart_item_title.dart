@@ -26,7 +26,17 @@ class CartItemTile extends StatelessWidget {
           Text('${cartItem.quantity}'),
           IconButton(
             icon: const Icon(Icons.add_circle_outline),
-            onPressed: () => cart.increaseQuantity(cartItem.product.id),
+            onPressed: () {
+              final increased = cart.increaseQuantity(cartItem.product.id);
+              if (!increased) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Only ${cartItem.product.stock} in stock'),
+                    duration: const Duration(seconds: 1),
+                  ),
+                );
+              }
+            },
           ),
           const SizedBox(width: 8),
           Text(

@@ -13,19 +13,31 @@ class CartProvider extends ChangeNotifier {
   int get totalPrice =>
       _items.values.fold(0, (sum, item) => sum + item.subtotal);
 
-  void addItem(Product product) {
-    if (_items.containsKey(product.id)) {
-      _items[product.id]!.quantity++;
+  // Challenge 3 (plan.md ข้อ 57 / planV2.md ข้อ 59): ห้ามเพิ่มสินค้าเกิน product.stock
+  // คืนค่า false เมื่อชนขีดจำกัด เพื่อให้ UI แสดงข้อความแจ้งผู้ใช้ได้
+  bool addItem(Product product) {
+    final existing = _items[product.id];
+
+    if (existing != null) {
+      if (existing.quantity >= product.stock) return false;
+      existing.quantity++;
     } else {
+      if (product.stock <= 0) return false;
       _items[product.id] = CartItem(product: product);
     }
+
     notifyListeners();
+    return true;
   }
 
-  void increaseQuantity(int productId) {
-    if (!_items.containsKey(productId)) return;
-    _items[productId]!.quantity++;
+  bool increaseQuantity(int productId) {
+    final item = _items[productId];
+    if (item == null) return false;
+    if (item.quantity >= item.product.stock) return false;
+
+    item.quantity++;
     notifyListeners();
+    return true;
   }
 
   void decreaseQuantity(int productId) {

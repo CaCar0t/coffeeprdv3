@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../config/api_config.dart';
 import '../models/product.dart';
+import '../providers/favorite_provider.dart';
 
 class ProductCard extends StatelessWidget {
   final Product product;
@@ -24,7 +26,32 @@ class ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Expanded(
-              child: _ProductImage(imageUrl: ApiConfig.imageUrl(product.image)),
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: _ProductImage(imageUrl: ApiConfig.imageUrl(product.image)),
+                  ),
+                  // Challenge 1 (plan.md ข้อ 57): Favorite Toggle
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: Consumer<FavoriteProvider>(
+                      builder: (context, favorites, _) {
+                        final isFavorite = favorites.isFavorite(product.id);
+                        return IconButton.filledTonal(
+                          onPressed: () => favorites.toggleFavorite(product),
+                          icon: Icon(
+                            isFavorite ? Icons.favorite : Icons.favorite_border,
+                            size: 18,
+                            color: isFavorite ? Colors.red : null,
+                          ),
+                          tooltip: isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),

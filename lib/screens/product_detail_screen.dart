@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../config/api_config.dart';
 import '../models/product.dart';
 import '../providers/cart_provider.dart';
+import '../providers/favorite_provider.dart';
 
 class ProductDetailScreen extends StatelessWidget {
   final Product product;
@@ -14,7 +15,23 @@ class ProductDetailScreen extends StatelessWidget {
     final imageUrl = ApiConfig.imageUrl(product.image);
 
     return Scaffold(
-      appBar: AppBar(title: Text(product.name)),
+      appBar: AppBar(
+        title: Text(product.name),
+        actions: [
+          // Challenge 1 (plan.md ข้อ 57): Favorite Toggle
+          Consumer<FavoriteProvider>(
+            builder: (context, favorites, _) {
+              final isFavorite = favorites.isFavorite(product.id);
+              return IconButton(
+                onPressed: () => favorites.toggleFavorite(product),
+                icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border),
+                color: isFavorite ? Colors.red : null,
+                tooltip: isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
+              );
+            },
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,9 +93,15 @@ class ProductDetailScreen extends StatelessWidget {
               onPressed: product.stock <= 0
                   ? null
                   : () {
-                      context.read<CartProvider>().addItem(product);
+                      final added = context.read<CartProvider>().addItem(product);
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Added ${product.name} to cart')),
+                        SnackBar(
+                          content: Text(
+                            added
+                                ? 'Added ${product.name} to cart'
+                                : 'Only ${product.stock} ${product.name} in stock',
+                          ),
+                        ),
                       );
                     },
               icon: const Icon(Icons.add_shopping_cart),
