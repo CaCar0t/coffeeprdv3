@@ -31,11 +31,19 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  void _loadProducts() {
+  Future<void> _loadProducts() async {
     final token = context.read<AuthProvider>().token;
-    if (token != null) {
-      context.read<ProductProvider>().fetchProducts(token);
-    }
+    if (token == null) return;
+
+    final productProvider = context.read<ProductProvider>();
+    await productProvider.fetchProducts(token);
+
+    if (!mounted) return;
+
+    // feature.md A3: ตะกร้า/รายการโปรดที่กู้มาจากเครื่องอาจถือราคาเก่าหรือถือสินค้า
+    // ที่ Admin ลบไปแล้ว — ข้อมูลสดเพิ่งมาถึงตรงนี้ จึงเป็นจังหวะที่ถูกต้องที่จะ sync
+    context.read<CartProvider>().syncWithProducts(productProvider.products);
+    context.read<FavoriteProvider>().syncWithProducts(productProvider.products);
   }
 
   void _handleLogout() {
@@ -61,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final productProvider = context.watch<ProductProvider>();
+    final user = context.watch<AuthProvider>().user;
 
     return Scaffold(
       appBar: AppBar(
@@ -85,10 +94,23 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           // Challenge 5 (plan.md ข้อ 57): ทางเข้าหน้า Admin Product CRUD
+          //
+          // feature.md B1 (ปิด G4): แสดงเฉพาะ admin
+          //
+          // ⚠️ บรรทัดนี้ไม่ใช่ security — เป็นแค่การไม่เกะกะสายตา customer
+          // ของจริงที่กันได้คือ requireAdmin ฝั่ง server ลองพิสูจน์เองได้ด้วย
+          // curl -X DELETE ด้วย token ของ customer แล้วดูว่าได้ 403
+          if (user?.isAdmin ?? false)
+            IconButton(
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              tooltip: 'Manage Products',
+              onPressed: () => Navigator.pushNamed(context, '/admin'),
+            ),
+          // feature.md A2: ทางเข้าประวัติการสั่งซื้อ
           IconButton(
-            icon: const Icon(Icons.admin_panel_settings_outlined),
-            tooltip: 'Manage Products',
-            onPressed: () => Navigator.pushNamed(context, '/admin'),
+            icon: const Icon(Icons.receipt_long),
+            tooltip: 'My Orders',
+            onPressed: () => Navigator.pushNamed(context, '/orders'),
           ),
           IconButton(
             icon: const Icon(Icons.logout),

@@ -21,7 +21,30 @@ class _AdminProductListScreenState extends State<AdminProductListScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadProducts());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _guardThenLoad());
+  }
+
+  // feature.md B1 (ปิด G4): ซ่อนปุ่มใน HomeScreen อย่างเดียวไม่พอ เพราะ route
+  // '/admin' ยังเปิดตรงได้ — บน Flutter Web พิมพ์ URL เอาได้เลย และในโค้ดก็เรียก
+  // Navigator.pushNamed('/admin') จากที่ไหนก็ได้
+  //
+  // แต่ด่านนี้ก็ยัง "ไม่ใช่ security" เหมือนกัน เป็นแค่ UX ที่ไม่พาผู้ใช้ไปเจอหน้าที่
+  // กดอะไรก็ได้ 403 ทั้งหน้า ตัวที่กันจริงคือ requireAdmin ฝั่ง server
+  void _guardThenLoad() {
+    final auth = context.read<AuthProvider>();
+
+    if (!(auth.user?.isAdmin ?? false)) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Admin role required'),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      return;
+    }
+
+    _loadProducts();
   }
 
   void _loadProducts() {

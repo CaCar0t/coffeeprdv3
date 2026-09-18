@@ -79,8 +79,7 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
     final auth = context.read<AuthProvider>();
     final provider = context.read<ProductProvider>();
     final token = auth.token;
-    final userId = auth.user?.id;
-    if (token == null || userId == null) return;
+    if (token == null) return;
 
     final name = _nameController.text.trim();
     final description = _descriptionController.text.trim();
@@ -110,7 +109,6 @@ class _AdminProductFormScreenState extends State<AdminProductFormScreen> {
         stock: stock,
         price: price,
         categoryId: _categoryId,
-        userId: userId,
         imageFile: _pickedImage,
       );
     }

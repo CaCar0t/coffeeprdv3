@@ -120,7 +120,6 @@ class ProductProvider extends ChangeNotifier {
     required int stock,
     required int price,
     required int categoryId,
-    required int userId,
     XFile? imageFile,
   }) async {
     isSaving = true;
@@ -136,7 +135,6 @@ class ProductProvider extends ChangeNotifier {
         stock: stock,
         price: price,
         categoryId: categoryId,
-        userId: userId,
         imageFile: imageFile,
       );
       // backend ORDER BY id DESC เสมอ (ดู backendapi.md ข้อ 2) — สินค้าใหม่จึงต้องขึ้นบนสุด

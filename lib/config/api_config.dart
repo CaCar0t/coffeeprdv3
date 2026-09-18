@@ -18,8 +18,13 @@ class ApiConfig {
   }
 
   static String get login => '$baseUrl/api/auth/login';
+  static String get register => '$baseUrl/api/auth/register';
   static String get products => '$baseUrl/api/products';
   static String productById(int id) => '$baseUrl/api/products/$id';
+
+  // feature.md A2 — Order API
+  static String get orders => '$baseUrl/api/orders';
+  static String orderById(int id) => '$baseUrl/api/orders/$id';
 
   /// ประกอบ URL เต็มของรูปสินค้าจากชื่อไฟล์ที่ backend คืนมา (field `image`)
   /// backend เก็บแค่ชื่อไฟล์ ไม่ใช่ URL เต็ม — ดู backendapi.md ข้อ 8 ขั้นที่ 5

@@ -105,6 +105,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           : const Text('LOGIN'),
                     ),
                   ),
+                  const SizedBox(height: 8),
+                  // feature.md A1: ทางเข้าหน้าสมัครสมาชิก — ใช้ push (ไม่ใช่
+                  // pushReplacement) เพื่อให้กดย้อนกลับมาหน้า Login ได้
+                  TextButton(
+                    onPressed: auth.isLoading
+                        ? null
+                        : () => Navigator.pushNamed(context, '/register'),
+                    child: const Text("Don't have an account? Sign up"),
+                  ),
                 ],
               ),
             ),

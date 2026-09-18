@@ -1,21 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/cart_provider.dart';
+import '../providers/order_provider.dart';
+import '../providers/product_provider.dart';
 import '../widgets/cart_item_title.dart';
 
 class CartScreen extends StatelessWidget {
   const CartScreen({super.key});
 
   // plan.md ข้อ 38: Cart -> Confirm -> Dialog -> Order Successful -> Clear Cart -> Home
-  // ยังไม่มี Order API ใน MVP นี้จึงเป็นการจำลอง (ดู backendapi.md ข้อ 2 "ไม่มี Order API")
-  Future<void> _confirmOrder(BuildContext context, int total) async {
+  //
+  // feature.md A2 (ปิด G2): เดิมขั้นตอนนี้เป็นของปลอม — showDialog แล้ว clearCart()
+  // ทันทีโดยไม่เคยยิง API ตอนนี้ต้องรอผลจริงจาก POST /api/orders ก่อน
+  //
+  // ลำดับสำคัญมาก และเป็นจุดพลาดคลาสสิก: ห้าม clearCart() ก่อนรู้ผล เพราะถ้า stock
+  // ไม่พอหรือเน็ตหลุด ผู้ใช้จะเสียตะกร้าทั้งใบไปโดยไม่ได้อะไรกลับมาเลย
+  Future<void> _confirmOrder(BuildContext context) async {
     final cart = context.read<CartProvider>();
+    final orderProvider = context.read<OrderProvider>();
+    final token = context.read<AuthProvider>().token;
+
+    if (token == null) return;
+
+    final order = await orderProvider.createOrder(
+      token: token,
+      items: cart.items.values.toList(),
+    );
+
+    if (!context.mounted) return;
+
+    if (order == null) {
+      // ล้มเหลว — ตะกร้าต้องยังอยู่ครบเพื่อให้แก้จำนวนแล้วลองใหม่ได้
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(orderProvider.placeOrderError ?? 'Cannot create order'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    cart.clearCart();
+
+    // server ตัด stock ไปแล้วตอนสร้าง Order — ข้อมูลสินค้าที่ค้างอยู่ในแอปจึงเก่า
+    // ไปหนึ่งก้าว โหลดใหม่เพื่อให้หน้า Home แสดง stock ตรงกับความจริง
+    context.read<ProductProvider>().fetchProducts(token);
 
     await showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Order Confirmed'),
-        content: Text('Total: ฿$total\n\nThank you for your order.'),
+        content: Text(
+          'Order #${order.id}\n'
+          'Total: ฿${order.totalPrice}\n\n'
+          'Thank you for your order.',
+        ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.pop(context),
@@ -25,8 +65,6 @@ class CartScreen extends StatelessWidget {
       ),
     );
 
-    cart.clearCart();
-
     if (context.mounted) {
       Navigator.popUntil(context, (route) => route.isFirst);
     }
@@ -35,6 +73,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cart = context.watch<CartProvider>();
+    final isPlacingOrder = context.watch<OrderProvider>().isPlacingOrder;
     final items = cart.items.values.toList();
 
     return Scaffold(
@@ -73,8 +112,17 @@ class CartScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: FilledButton(
-                        onPressed: () => _confirmOrder(context, cart.totalPrice),
-                        child: const Text('Confirm Order'),
+                        // ปิดปุ่มระหว่างรอ API ตอบ เพื่อไม่ให้กดซ้ำจนสั่งซื้อซ้ำสองรอบ
+                        onPressed: isPlacingOrder
+                            ? null
+                            : () => _confirmOrder(context),
+                        child: isPlacingOrder
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Text('Confirm Order'),
                       ),
                     ),
                   ],

@@ -29,6 +29,19 @@ class Product {
     );
   }
 
+  // feature.md A3 (ปิด G3): ต้องมี toJson() เพื่อเก็บ Cart/Favorite ลง
+  // SharedPreferences — key ต้องตรงกับที่ fromJson() อ่าน (โดยเฉพาะ `category_id`
+  // ที่เป็น snake_case ตาม backend ไม่ใช่ `categoryId` แบบชื่อ field ใน Dart)
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'image': image,
+        'stock': stock,
+        'price': price,
+        'category_id': categoryId,
+      };
+
   // backend คืนตัวเลขเป็น int ปกติตอน GET แต่คืนเป็น String ตอน POST/PUT
   // (เพราะรับค่าจาก multipart/form-data) — parse ให้ทนทั้งสองแบบ
   static int _toInt(dynamic value) {
